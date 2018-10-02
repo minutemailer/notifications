@@ -3,7 +3,7 @@ import Notifcations from '../src';
 const notifications = new Notifcations();
 
 setTimeout(() => {
-    notifications.add('Hej');
+    notifications.add('Hej', null, null, { closeBtn: '×' });
 }, 1000);
 
 setTimeout(() => {

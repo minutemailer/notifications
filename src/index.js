@@ -64,7 +64,7 @@ class Message {
         const messageEl = createEl('article', { class: bem(elementBaseClassName).e('message') }, this.message);
 
         if (this.props.closeBtn) {
-            const closeEl = createBtn(bem(elementBaseClassName).e('close'), this.props.closeBtn, () => {});
+            const closeEl = createBtn(bem(elementBaseClassName).e('close'), this.props.closeBtn, this.hide);
 
             this.element.appendChild(closeEl);
         }
@@ -99,18 +99,20 @@ class Message {
         this.element.style.transform = 'translate3d(0, 0, 0)';
         this.element.style.height = `${this.element.getBoundingClientRect().height}px`;
 
-        this.timer = setTimeout(() => {
-            this.element.style.transform = 'translate3d(100%, 0, 0)';
-            this.detach();
+        this.timer = setTimeout(this.hide, this.props.ttl);
+    };
 
-            setTimeout(() => {
-                this.element.style.height = '0px';
-                this.element.style.paddingTop = '0px';
-                this.element.style.paddingBottom = '0px';
+    hide = () => {
+        this.element.style.transform = 'translate3d(100%, 0, 0)';
+        this.detach();
 
-                setTimeout(this.destroy, this.props.animationSpeed);
-            }, this.props.animationSpeed);
-        }, this.props.ttl);
+        setTimeout(() => {
+            this.element.style.height = '0px';
+            this.element.style.paddingTop = '0px';
+            this.element.style.paddingBottom = '0px';
+
+            setTimeout(this.destroy, this.props.animationSpeed);
+        }, this.props.animationSpeed);
     };
 
     destroy = () => {
@@ -138,11 +140,13 @@ export default class Notifications {
         this.props.el.appendChild(this.container);
     }
 
-    add(message, action = null, modifier = null) {
+    add(message, action = null, modifier = null, props = {}) {
+        const mergedProps = Object.assign({ container: this.container }, this.props, props);
+
         return new Message({
             message,
             action,
             modifier,
-        }, { ...this.props, container: this.container });
+        }, mergedProps);
     }
 }
