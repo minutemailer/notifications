@@ -1,6 +1,12 @@
 const bem = className => ({
-    e(elements) {
-        return elements.split(' ').map(element => `${className}__${element}`).join(' ');
+    e(elements, modifiers = null) {
+        let elClass = elements.split(' ').map(element => `${className}__${element}`).join(' ');
+
+        if (modifiers) {
+            elClass += ` ${bem(elClass).m(modifiers)}`;
+        }
+
+        return elClass;
     },
 
     m(modifiers) {
@@ -52,28 +58,27 @@ class Message {
     }
 
     build() {
-        const elementBaseClassName = bem(this.props.className).e('notification');
-        let elementClassName = elementBaseClassName;
+        const baseClass = bem(this.props.className).e('notification');
+        let elClassName = baseClass;
 
         if (this.modifier) {
-            elementClassName += ` ${bem(elementBaseClassName).m(this.modifier)}`;
+            elClassName += ` ${bem(baseClass).m(this.modifier)}`;
         }
 
-        this.element = createEl('article', { class: elementClassName });
+        this.element = createEl('article', { class: elClassName });
 
-        const messageEl = createEl('article', { class: bem(elementBaseClassName).e('message') }, this.message);
-
-        if (this.props.closeBtn) {
-            const closeEl = createBtn(bem(elementBaseClassName).e('close'), this.props.closeBtn, this.hide);
-
-            this.element.appendChild(closeEl);
-        }
+        const messageEl = createEl('article', { class: bem(baseClass).e('message') }, this.message);
+        const actionsEl = createEl('footer', { class: bem(baseClass).e('actions') });
+        const closeEl = createBtn(bem(baseClass).e('btn', 'close'), this.props.closeText, this.hide);
 
         if (this.action) {
-            const actionEl = createBtn(bem(elementBaseClassName).e('action'), this.action.text, this.action.onClick);
+            const actionEl = createBtn(bem(baseClass).e('btn', this.action.className), this.action.text, e => this.action.onClick(e, this.hide));
 
-            this.element.appendChild(actionEl);
+            actionsEl.appendChild(actionEl);
         }
+
+        actionsEl.appendChild(closeEl);
+        messageEl.appendChild(actionsEl);
 
         this.element.appendChild(messageEl);
 
@@ -82,27 +87,45 @@ class Message {
     }
 
     attach() {
-        this.element.addEventListener('mouseover', this.clearTimer);
-        this.element.addEventListener('mouseleave', this.show);
+        this.element.addEventListener('mouseover', this.onMouseOver);
+        this.element.addEventListener('mouseleave', this.onMouseLeave);
     }
 
     detach() {
-        this.element.removeEventListener('mouseover', this.clearTimer);
-        this.element.removeEventListener('mouseleave', this.show);
+        this.element.removeEventListener('mouseover', this.onMouseOver);
+        this.element.removeEventListener('mouseleave', this.onMouseLeave);
     }
 
-    clearTimer = () => {
+    onMouseOver = () => {
+        this.element.classList.add('is-showing-actions');
+        this.element.style.height = 'auto';
+
+        setTimeout(() => {
+            this.element.style.height = `${this.element.getBoundingClientRect().height}px`;
+        }, 50);
+
         clearTimeout(this.timer);
-    }
+    };
+
+    onMouseLeave = () => {
+        this.element.classList.remove('is-showing-actions');
+
+        this.show();
+    };
 
     show = () => {
-        this.element.style.transform = 'translate3d(0, 0, 0)';
-        this.element.style.height = `${this.element.getBoundingClientRect().height}px`;
+        this.element.style.height = 'auto';
+
+        setTimeout(() => {
+            this.element.style.transform = 'translate3d(0, 0, 0)';
+            this.element.style.height = `${this.element.getBoundingClientRect().height}px`;
+        }, 50);
 
         this.timer = setTimeout(this.hide, this.props.ttl);
     };
 
     hide = () => {
+        this.element.classList.add('is-hiding');
         this.element.style.transform = 'translate3d(100%, 0, 0)';
         this.detach();
 
@@ -120,7 +143,9 @@ class Message {
     };
 }
 
-export default class Notifications {
+let instance = null;
+
+class Notifications {
     constructor(props) {
         this.container = null;
 
@@ -129,7 +154,7 @@ export default class Notifications {
             ttl: 5000,
             animationSpeed: 300,
             el: document.body,
-            closeBtn: false,
+            closeText: 'Close',
         }, props);
 
         this.build();
@@ -150,3 +175,17 @@ export default class Notifications {
         }, mergedProps);
     }
 }
+
+export default {
+    create(props) {
+        if (instance) {
+            return;
+        }
+
+        instance = new Notifications(props);
+    },
+
+    add(...args) {
+        instance.add(...args);
+    },
+};

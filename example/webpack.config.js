@@ -22,7 +22,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            title: 'Popup',
+            title: 'Notifications',
             template: resolve(__dirname, './template.html'),
         }),
     ],
