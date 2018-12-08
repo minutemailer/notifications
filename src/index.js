@@ -161,7 +161,7 @@ class Notifications {
     }
 
     build() {
-        this.container = createEl('div', { class: bem(this.props.className).e('container') });
+        this.container = createEl('div', { class: this.props.className });
         this.props.el.appendChild(this.container);
     }
 

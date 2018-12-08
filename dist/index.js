@@ -214,7 +214,7 @@ function () {
     key: "build",
     value: function build() {
       this.container = createEl('div', {
-        class: bem(this.props.className).e('container')
+        class: this.props.className
       });
       this.props.el.appendChild(this.container);
     }
